@@ -27,7 +27,7 @@ def extract_article_text(url):
 
 RSS_FEEDS = {
     "BBC": "https://feeds.bbci.co.uk/news/rss.xml",
-    "Reuters": "https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com&hl=en-US&gl=US&ceid=US:en",
+    "Reuters": "https://news.google.com/rss/search?q=site%3Areuters.com&hl=en-US&gl=US&ceid=US%3Aen",
     "TechCrunch": "https://techcrunch.com/feed/",
     "The Hindu": "https://www.thehindu.com/news/feeder/default.rss",
     "Indian Express": "https://indianexpress.com/feed/",

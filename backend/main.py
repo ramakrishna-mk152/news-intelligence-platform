@@ -67,11 +67,20 @@ def search_articles(q: str, db: Session = Depends(get_db)):
     )
 
     return articles
+
 @app.post("/ask")
 def ask_question(request: QuestionRequest):
-    answer = ask(request.question)
+    result = ask(request.question)
+
+    if result is None:
+        return {
+            "question": request.question,
+            "answer": "Failed to generate answer.",
+            "sources": []   
+        }
 
     return {
         "question": request.question,
-        "answer": answer
+        "answer": result["answer"],
+        "sources": result["sources"]
     }

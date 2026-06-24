@@ -5,7 +5,7 @@ from google import genai
 from vector_store import search_articles
 from database import SessionLocal
 from models import Article
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -20,7 +20,7 @@ def fetch_articles_by_ids(db, article_ids):
     """Fetch full article rows from Postgres for the given ids,
     keeping them in the SAME order vector search ranked them."""
     
-    cutoff = datetime.utcnow() - timedelta(days=7)
+    cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=7)
 
     rows = (
         db.query(Article)
@@ -116,10 +116,26 @@ Answer:
         response = client.models.generate_content(model=MODEL, contents=prompt)
     except Exception as error:
         print(f"Gemini call failed: {error}")
-        return
+
+        return {
+            "answer": f"Gemini is temporarily unavailable: {error}",
+            "sources": []
+        }
 
     print("Answer:")
-    return response.text
+    sources = []
+
+    for article in articles:
+        sources.append({
+            "title": article.title,
+            "source": article.source,
+            "url": article.url
+        })
+
+    return {
+        "answer": response.text,
+        "sources": sources
+    }
 
 
 if __name__ == "__main__":
