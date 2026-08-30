@@ -17,8 +17,7 @@ MODEL = "gemini-2.5-flash"
 
 
 def fetch_articles_by_ids(db, article_ids):
-    """Fetch full article rows from Postgres for the given ids,
-    keeping them in the SAME order vector search ranked them."""
+
     
     cutoff = datetime.now(UTC).replace(tzinfo=None) - timedelta(days=7)
 
@@ -37,26 +36,41 @@ def fetch_articles_by_ids(db, article_ids):
     return ordered
 
 
-def build_context(articles):
-    """Build the prompt context from real Postgres fields,
-    including source and URL so the answer can cite them."""
+def build_context(results, articles):
+
+
+    articles_by_id = {article.id: article for article in articles}
+
     blocks = []
-    for article in articles:
+
+    for result in results:
+        article_id = result["article_id"]
+        chunk_text = result["text"]
+
+        article = articles_by_id.get(article_id)
+
+        if not article:
+            continue
+
         block = (
             f"[Article {article.id}]\n"
             f"Title: {article.title}\n"
             f"Source: {article.source}\n"
             f"URL: {article.url}\n"
             f"Published: {article.published_at}\n"
-            f"Content: {article.content[:6700]}"
+            f"Relevant Content:\n{chunk_text}"
         )
-        blocks.append(block)
-    return "\n\n".join(blocks)
 
+        blocks.append(block)
+
+    return "\n\n".join(blocks)
 
 def ask(question):
    
     results = search_articles(question, top_k=10)
+    print("\nRetrieved chunks:")
+    for result in results:
+        print(result)
     retrieved_ids = [m["article_id"] for m in results]
     print(f"Retrieved article IDs: {retrieved_ids}\n")
 
@@ -78,7 +92,7 @@ def ask(question):
         if not articles:
             print("Vector search returned ids, but none exist in Postgres.")
             return
-        context = build_context(articles)
+        context = build_context(results, articles)
     finally:
         db.close()
 
@@ -96,8 +110,7 @@ Rules:
 5. Do NOT mention article IDs.
 6. Do NOT invent facts not present in the articles.
 7. If the articles do not contain enough information, explicitly say so.
-8. At the end, provide sources in the format:
-   Source: <source name> - <url>
+8. Do not provide source URLs or a separate source list in your answer. The application will display the sources separately.
 9. Focus on answering the user's question directly.
 10. Mention only the most relevant causes and events.
 11. Avoid spending excessive detail on secondary background information.

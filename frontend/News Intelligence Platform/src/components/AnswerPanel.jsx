@@ -1,4 +1,4 @@
-
+import ReactMarkdown from "react-markdown";
 
 export default function AnswerPanel({ question, answer, loading }) {
   return (
@@ -36,10 +36,10 @@ export default function AnswerPanel({ question, answer, loading }) {
           </div>
         ) : (
           
-          <div className="answer-body space-y-4">
-            {answer.split('\n').filter(Boolean).map((para, i) => (
-              <p key={i}>{para}</p>
-            ))}
+          <div className="answer-body prose prose-sm max-w-none">
+            <ReactMarkdown>
+              {answer}
+            </ReactMarkdown>
           </div>
         )}
       </div>

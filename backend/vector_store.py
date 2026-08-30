@@ -15,16 +15,21 @@ collection = client.get_or_create_collection(name="news_articles")
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
-def add_article(article_id, text):
-    """Embed one article's text and store its vector in Chroma under article_id."""
-  
+def add_article(article_id, text, chunk_index):
+    """Embed one article chunk and store its vector in ChromaDB."""
+
     embedding = model.encode(text).tolist()
 
-    
+    chunk_id = f"{article_id}_chunk_{chunk_index}"
+
     collection.upsert(
-        ids=[str(article_id)],
+        ids=[chunk_id],
         embeddings=[embedding],
         documents=[text],
+        metadatas=[{
+            "article_id": article_id,
+            "chunk_index": chunk_index
+        }]
     )
 
 
@@ -46,13 +51,15 @@ def search_articles(query, top_k=5):
     matches = []
     SIMILARITY_THRESHOLD = 1.30
 
-    for article_id, document, distance in zip(ids, documents, distances):
+    for chunk_id, document, distance in zip(ids, documents, distances):
 
         if distance > SIMILARITY_THRESHOLD:
             continue
 
+        article_id = int(chunk_id.split("_chunk_")[0])
+
         matches.append({
-            "article_id": int(article_id),
+            "article_id": article_id,
             "text": document,
             "distance": distance,
         })

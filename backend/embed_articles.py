@@ -1,7 +1,12 @@
 from database import SessionLocal
 from models import Article
 from vector_store import add_article
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,
+    chunk_overlap=200
+)
 
 def main():
    
@@ -16,9 +21,14 @@ def main():
         for index, article in enumerate(articles, start=1):
             
             text = f"Title: {article.title}\n\nContent: {article.content}"
-
+            chunks = text_splitter.split_text(text)
            
-            add_article(article.id, text)
+            for chunk_index, chunk in enumerate(chunks):
+                add_article(
+                    article.id,
+                    chunk,
+                    chunk_index
+                )
 
            
             print(f"[{index}/{total}] embedded article id={article.id}")
